@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\robo-lab\Desktop\Voiceoutput_ver2-master\Voiceoutput_ver2-master\Voice_output_ver2\build\CMakeFiles\bc6a51b6f4f984f486370108f42d2cdd\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{E6D44213-BE77-3170-9D14-228BF266C109}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
