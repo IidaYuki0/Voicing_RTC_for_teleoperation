@@ -30,7 +30,7 @@ static const char* vouce_output_ver2_spec[] =
     "lang_type",         "compile",
     // Configuration variables
     "conf.default.select_language", "1",
-    "conf.default.voice_interval", "500",
+    "conf.default.voice_interval", "250",
 
     // Widget
     "conf.__widget__.select_language", "text",
@@ -39,7 +39,6 @@ static const char* vouce_output_ver2_spec[] =
 
     "conf.__type__.select_language", "int",
     "conf.__type__.voice_interval", "int",
-	"conf.__constraints__.select_language", "(JPN,ENG,CHN)",
     ""
   };
 // </rtc-template>
@@ -51,8 +50,8 @@ static const char* vouce_output_ver2_spec[] =
 Vouce_output_ver2::Vouce_output_ver2(RTC::Manager* manager)
     // <rtc-template block="initializer">
   : RTC::DataFlowComponentBase(manager),
-    m_voice_inIn("voice_in", m_voice_in),
-    m_Data_inIn("Data_in", m_Data_in),
+	m_Data_inIn("Data_in", m_Data_in),
+	m_Command_inIn("Command_in", m_Command_in),
     m_Data_outOut("Data_out", m_Data_out)
 
     // </rtc-template>
@@ -73,7 +72,7 @@ RTC::ReturnCode_t Vouce_output_ver2::onInitialize()
   // Registration: InPort/OutPort/Service
   // <rtc-template block="registration">
   // Set InPort buffers
-  addInPort("voice_in", m_voice_inIn);
+  addInPort("Command_in", m_Command_inIn);
   addInPort("Data_in", m_Data_inIn);
   
   // Set OutPort buffer
@@ -137,208 +136,145 @@ RTC::ReturnCode_t Vouce_output_ver2::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t Vouce_output_ver2::onExecute(RTC::UniqueId ec_id)
 {
 	//音声出力
-	if (m_voice_inIn.isNew())
+	if (m_Command_inIn.isNew())
 	{
-		if (m_select_language == 1) {
-			m_voice_inIn.read();
-			std::cout << "con" << m_voice_in.data << std::endl;
-			double con = m_voice_in.data;
+		m_Command_inIn.read();
 
-			//1番は前進
-			if (con == 1) {
-				//std::cout << "OK" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "Move_forward.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-			
-			}
-			else if (con == 2) {//2番は右折
-				//std::cout << "OK2" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "Turn_right.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-			}
-			else if (con == 3) {//3番は左折
-				//std::cout << "OK3" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "Turn_left.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-			}
-			else if (con == 4) {//4番は後退
-				//std::cout << "OK4" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "Move_back.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-			}
-			else if (con == 5) {//5番は停止
-				//std::cout << "OK5" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "Stop_state.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-			}
-			else if (con == 6) {//6は後方確認;
-				m_Alarm_Sound = "Back_Object.wav";
-				sound();
-				wait(m_voice_interval);
-			}
-			else if (con == 7) {//7番は右旋回
-				//std::cout << "OK5" << a_flag << "con" << m_voice_in.data << std::endl;
+		double vy = m_Command_in.data.vy;
+		double va = m_Command_in.data.va;
+
+		if (m_select_language == 1)
+		{
+			if (va == -1000 && vy == 0) //右旋回指令
+			{
+				printf("Spin_right\n");
 				m_Alarm_Sound = "Spin_right";
 				sound();
-				wait(m_voice_interval);
-				con = 0;
+				Sleep(m_voice_interval);
 			}
-			else if (con == 8) {//8番は左旋回
-				//std::cout << "OK5" << a_flag << "con" << m_voice_in.data << std::endl;
+			else if (va < 0 && vy > 0) ////右折指令
+			{
+				printf("Turn_right\n");
+				m_Alarm_Sound = "Turn_right.wav";
+				sound();
+				Sleep(m_voice_interval);
+			}
+			else if (vy == 1000 && va == 0) //前進指令
+			{
+				printf("Going_forward\n");
+				m_Alarm_Sound = "Move_forward.wav";
+				sound();
+				Sleep(m_voice_interval);
+			}
+			else if (va > 0 && vy > 0)//左折指令
+			{
+				printf("Turn_left\n");
+				m_Alarm_Sound = "Turn_left.wav";
+				sound();
+				Sleep(m_voice_interval);
+			}
+			else if (va == 1000 && vy == 0)//左旋回指令
+			{
+				printf("Spin_left\n");
 				m_Alarm_Sound = "Spin_left.wav";
 				sound();
-				wait(m_voice_interval);
-				con = 0;
+				Sleep(m_voice_interval);
 			}
-			else if (con == 9) {//9番は減速
-				m_Alarm_Sound = "dec.wav";
+			else if (va < 0 && vy < 0) //左後退指令
+			{
+				printf("Moving_back\n");
+				m_Alarm_Sound = "Move_back.wav";
 				sound();
-				wait(m_voice_interval);
-				con = 0;
+				Sleep(m_voice_interval);
 			}
-			else if (con == 10) {//10番は加速
-				m_Alarm_Sound = "Acc.wav";
+			else if (vy == -1000 && va == 0) //後退指令
+			{
+				printf("Moving_back\n");
+				m_Alarm_Sound = "Move_back.wav";
 				sound();
-				wait(m_voice_interval);
-				con = 0;
+				Sleep(m_voice_interval);
+			}
+			else if (va > 0 && vy < 0) //右後退指令
+			{
+				printf("Moving_back\n");
+				m_Alarm_Sound = "Move_back.wav";
+				sound();
+				Sleep(m_voice_interval);
+			}
+			else  if (va == 0 && vy == 0)
+			{
+				//停止中
+				printf("No Command\n");
+				m_Alarm_Sound = "Stop_state.wav";
+				sound();
+				Sleep(m_voice_interval);
 			}
 		}
-		//中国語ver	
-		else if (m_select_language == 3)
-		{
-			m_voice_inIn.read();
-			std::cout << "con" << m_voice_in.data << std::endl;
-			double con = m_voice_in.data;
-
-			//1番は前進
-			if (con == 1) {
-				//std::cout << "OK" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "moving_forward_chi.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-
-			}
-			else if (con == 2) {//2番は右折
-								//std::cout << "OK2" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "turn_right_chi.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-			}
-			else if (con == 3) {//3番は左折
-								//std::cout << "OK3" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "turn_left_chi.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-			}
-			else if (con == 4) {//4番は後退
-								//std::cout << "OK4" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "moving_back_chi.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-			}
-			else if (con == 5) {//5番は停止
-								//std::cout << "OK5" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "stopping_chi.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-			}
-			else if (con == 6) {//6は後方確認;
-				m_Alarm_Sound = "Back_Object.wav";
-				sound();
-				wait(m_voice_interval);
-			}
-			else if (con == 7) {//7番は右旋回
-								//std::cout << "OK5" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "spin_right_chi.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-			}
-			else if (con == 8) {//8番は左旋回
-								//std::cout << "OK5" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "spin_left_chi.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-			}
-		}
-		//英語ver
 		else if (m_select_language == 2)
 		{
-			m_voice_inIn.read();
-			std::cout << "con" << m_voice_in.data << std::endl;
-			double con = m_voice_in.data;
-
-			//1番は前進
-			if (con == 1) {
-				//std::cout << "OK" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "moving forward_eng.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-
-			}
-			else if (con == 2) {//2番は右折
-								//std::cout << "OK2" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "turn_right_eng.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-			}
-			else if (con == 3) {//3番は左折
-								//std::cout << "OK3" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "turn_left_eng.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-			}
-			else if (con == 4) {//4番は後退
-								//std::cout << "OK4" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "moving_back_eng.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-			}
-			else if (con == 5) {//5番は停止
-								//std::cout << "OK5" << a_flag << "con" << m_voice_in.data << std::endl;
-				m_Alarm_Sound = "stopping_eng.wav";
-				sound();
-				wait(m_voice_interval);
-				con = 0;
-			}
-			else if (con == 6) {//6は後方確認;
-				m_Alarm_Sound = "Back_Object.wav";
-				sound();
-				wait(m_voice_interval);
-			}
-			else if (con == 7) {//7番は右旋回
-								//std::cout << "OK5" << a_flag << "con" << m_voice_in.data << std::endl;
+			if (va == -1000 && vy == 0) //右旋回指令
+			{
+				printf("Spin_right\n");
 				m_Alarm_Sound = "spin_right_eng.wav";
 				sound();
-				wait(m_voice_interval);
-				con = 0;
+				Sleep(m_voice_interval);
 			}
-			else if (con == 8) {//8番は左旋回
-								//std::cout << "OK5" << a_flag << "con" << m_voice_in.data << std::endl;
+			else if (va < 0 && vy > 0) ////右折指令
+			{
+				printf("Turn_right\n");
+				m_Alarm_Sound = "turn_right_eng.wav";
+				sound();
+				Sleep(m_voice_interval);
+			}
+			else if (vy == 1000 && va == 0) //前進指令
+			{
+				printf("Going_forward\n");
+				m_Alarm_Sound = "moving forward_eng.wav";
+				sound();
+				Sleep(m_voice_interval);
+			}
+			else if (va > 0 && vy > 0)//左折指令
+			{
+				printf("Turn_left\n");
+				m_Alarm_Sound = "turn_left_eng.wav";
+				sound();
+				Sleep(m_voice_interval);
+			}
+			else if (va == 1000 && vy == 0)//左旋回指令
+			{
+				printf("Spin_left\n");
 				m_Alarm_Sound = "spin_left_eng.wav";
 				sound();
-				wait(m_voice_interval);
-				con = 0;
+				Sleep(m_voice_interval);
+			}
+			else if (va < 0 && vy < 0) //左後退指令
+			{
+				printf("Moving_back\n");
+				m_Alarm_Sound = "moving_back_eng.wav";
+				sound();
+				Sleep(m_voice_interval);
+			}
+			else if (vy == -1000 && va == 0) //後退指令
+			{
+				printf("Moving_back\n");
+				m_Alarm_Sound = "moving_back_eng.wav";
+				sound();
+				Sleep(m_voice_interval);
+			}
+			else if (va > 0 && vy < 0) //右後退指令
+			{
+				printf("Moving_back\n");
+				m_Alarm_Sound = "moving_back_eng.wav";
+				sound();
+				Sleep(m_voice_interval);
+			}
+			else  if (va == 0 && vy == 0)
+			{
+				//停止中
+				printf("No Command\n");
+				m_Alarm_Sound = "stopping_eng.wav";
+				sound();
+				Sleep(m_voice_interval);
 			}
 		}
 		else printf("select language\n");
@@ -387,7 +323,7 @@ void Vouce_output_ver2::sound()
 {
 	PlaySound(_T(m_Alarm_Sound.c_str()), NULL, SND_FILENAME);
 }
-
+/*
 void Vouce_output_ver2::wait(int time)
 {
 	clock_t end_wait = 0;
@@ -401,6 +337,7 @@ void Vouce_output_ver2::wait(int time)
 		if ((end_wait - start_wait) > time) break;
 	}
 }
+*/
 extern "C"
 {
  
