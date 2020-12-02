@@ -290,10 +290,10 @@ class Vouce_output_ver2
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  RTC::TimedLong m_voice_in;
+  RTC::TimedVelocity2D m_Command_in;
   /*!
    */
-  InPort<RTC::TimedLong> m_voice_inIn;
+  InPort<RTC::TimedVelocity2D> m_Command_inIn;
   RTC::TimedDoubleSeq m_Data_in;
   /*!
    */
