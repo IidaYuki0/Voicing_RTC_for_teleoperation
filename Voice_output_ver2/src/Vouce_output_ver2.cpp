@@ -72,8 +72,8 @@ RTC::ReturnCode_t Vouce_output_ver2::onInitialize()
   // Registration: InPort/OutPort/Service
   // <rtc-template block="registration">
   // Set InPort buffers
-  addInPort("Command_in", m_Command_inIn);
   addInPort("Data_in", m_Data_inIn);
+  addInPort("Command_in", m_Command_inIn);
   
   // Set OutPort buffer
   addOutPort("Data_out", m_Data_outOut);
